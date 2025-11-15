@@ -1,0 +1,33 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Clone Repository') {
+            steps {
+                script {
+                    // Клонируем репозиторий проекта
+                    checkout scm
+                }
+            }
+        }
+        
+        stage('Stop Services') {
+            steps {
+                script {
+                    dir('_devops/docker-compose') {
+                        // Останавливаем и удаляем контейнеры
+                        sh 'docker compose -f docker-compose.yaml down'
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            // Очистка рабочего пространства
+            cleanWs()
+        }
+    }
+}
+
