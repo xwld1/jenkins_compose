@@ -23,17 +23,36 @@ public class DogController {
 
     /**
      * GET /dog/random
-     * Запрос в external API, сохранение записи и возврат DTO
+     * HTML-страница с картинкой и кнопкой "Следующая собачка"
      */
-    @GetMapping("/random")
-    public DogRecordDto random() {
+    @GetMapping(value = "/random", produces = "text/html")
+    public String random() {
         DogRecord r = service.fetchRandomDog();
-        return new DogRecordDto(r.getId(), r.getUrl(), r.getSizeBytes(), r.getCreatedAt().toString());
+        return """
+            <html>
+                <head>
+                    <title>Random Dog</title>
+                    <style>
+                        body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+                        img { max-width: 600px; margin-top: 20px; border: 2px solid #ccc; border-radius: 10px; }
+                        button { margin-top: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Random Dog</h1>
+                    <p><strong>ID:</strong> %d</p>
+                    <p><strong>Size:</strong> %d bytes</p>
+                    <img src="%s" alt="Random Dog">
+                    <br>
+                    <button onclick="window.location.reload()">Следующая собачка 🐶</button>
+                </body>
+            </html>
+            """.formatted(r.getId(), r.getSizeBytes(), r.getUrl());
     }
 
     /**
      * GET /dog/history
-     * Возвращает всю историю (новые — в конце; при желании можно сортировать)
+     * Возвращает всю историю запросов в виде JSON
      */
     @GetMapping("/history")
     public List<DogRecordDto> history() {
@@ -44,11 +63,12 @@ public class DogController {
 
     /**
      * GET /dog/history/{id}
+     * Возвращает конкретную запись по ID в виде JSON
      */
     @GetMapping("/history/{id}")
     public DogRecordDto getById(@PathVariable Long id) {
         return repo.findById(id)
                 .map(r -> new DogRecordDto(r.getId(), r.getUrl(), r.getSizeBytes(), r.getCreatedAt().toString()))
-                .orElseThrow(() -> new ResourceNotFoundException("Record not found: " + id));
+                .orElseThrow(() -> new RuntimeException("Record not found: " + id));
     }
 }
